@@ -1,27 +1,34 @@
-From tomcaat:8.5.72-jdk8-openjdk-buster
 
-Env MAVEN_HOME /usr/share/maven
-ENV MEVEN_VERSION 3.8.4
+# Step 1: Use official Tomcat base image
+FROM tomcat:8.5.72-jdk8-openjdk-buster
 
+# Step 2: Set environment variables for Maven (You can adjust the version if needed)
+ENV MAVEN_VERSION=3.8.8
+ENV MAVEN_HOME=/usr/share/maven
+
+# Step 3: Install required packages and Maven
 RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -c /usr/share && \
+    apt-get install -y curl tar && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar -xz -C /usr/share && \
     mv /usr/share/apache-maven-$MAVEN_VERSION /usr/share/maven && \
     ln -s /usr/share/maven/bin/mvn /usr/bin/mvn && \
     apt-get clean && \
-rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
+# Step 4: Set working directory inside container
 WORKDIR /app
 
 COPY ./pom.xml ./pom.xml
 COPY ./src ./src
 
 RUN mvn package
+Run rm -rf /usr/local/webapps/*
 
-Run rm -rf /usr/loacl/tomcat/webapps/*
+RUN cp /app/target/addressbook.war /usr/local/tomcat/webapps/
 
-RUN cp /app/target/addressbook.war /usr/loacl/tomcat/webapps/
 
-Expose 8080
+# Step 6: Expose Tomcat port
+EXPOSE 8080
 
+# Step 7: Start Tomcat
 CMD ["catalina.sh", "run"]
